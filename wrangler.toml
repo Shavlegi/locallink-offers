@@ -1,0 +1,50 @@
+# wrangler.toml — locallink-offers (Cloudflare Worker + D1)
+# Email signup + admin sending panel for Local Link (https://locallink.store/).
+# Same proven pattern as Mini Link / locallink-stock: Worker + D1, PBKDF2
+# admin password, DB-backed sessions, IP-hash rate limiting.
+#
+# SETUP (dashboard, no terminal needed):
+# 1. Cloudflare dashboard -> Workers & Pages -> D1 (Storage) -> Create a
+#    database named "locallink-offers-db". Copy its database_id and paste it
+#    below, replacing REPLACE_WITH_YOUR_D1_DATABASE_ID.
+# 2. Workers & Pages -> Create -> Connect to Git -> connect this repo.
+#    The Worker name below ("locallink-offers") becomes
+#    locallink-offers.<account>.workers.dev.
+# 3. In the Worker -> Settings -> Variables and Secrets, add:
+#      ADMIN_PASSWORD_HASH — generate with scripts/make-hash.html
+#        (opens in a browser; never commit or share the value)
+#      SESSION_SECRET — a long random string (same page generates one)
+#      RESEND_API_KEY — from your Resend account (API Keys -> Create).
+#        Without it, signups still work (stored as pending) but no mail
+#        is sent and the panel says sending is not set up.
+#    Never commit real secret values to the repo.
+# 4. Deploy. The Worker creates its D1 tables itself on the first request
+#    (lazy idempotent schema) — no migrations to run.
+# 5. Public signup page: https://locallink-offers.<account>.workers.dev/
+#    Admin panel: .../admin
+# 6. Subdomain (test): offers.locallink.store — in Namecheap (BasicDNS)
+#    add a CNAME record: host "offers", value
+#    "locallink-offers.<account>.workers.dev". Then in the Cloudflare
+#    dashboard, Worker -> Settings -> Domains -> Add Custom Domain ->
+#    offers.locallink.store.
+# 7. Sending domain (Resend): in Resend -> Domains -> Add Domain ->
+#    locallink.store, then add the SPF/DKIM TXT records it shows into
+#    Namecheap DNS. Until the domain is verified, Resend refuses to send.
+#    FROM_EMAIL below defaults to noreply@locallink.store.
+
+name = "locallink-offers"
+main = "src/index.js"
+compatibility_date = "2025-11-01"
+
+# D1 database binding. `binding` must stay "DB" — the Worker code reads env.DB.
+[[d1_databases]]
+binding = "DB"
+database_name = "locallink-offers-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# Sending identity (plain vars, not secrets — the address itself is public).
+[vars]
+FROM_NAME = "Local Link"
+FROM_EMAIL = "noreply@locallink.store"
+MAIL_SENDER = "resend"
+# MAIL_DAILY_CAP = "100"  # default 100/day (Resend free tier). Uncomment to change.

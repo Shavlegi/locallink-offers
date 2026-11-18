@@ -1,0 +1,1 @@
+{"description":"Local Link email signup (double opt-in) + admin sending panel on Cloudflare Workers + D1, sending via Resend.","devDependencies":{"wrangler":"^4.0.0"},"name":"locallink-offers","private":true,"scripts":{"deploy":"wrangler deploy","dev":"wrangler dev","test":"node test/offers-harness.mjs"},"type":"module","version":"1.0.0"}
